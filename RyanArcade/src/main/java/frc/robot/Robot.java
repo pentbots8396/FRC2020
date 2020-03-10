@@ -16,7 +16,7 @@ import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import edu.wpi.first.cameraserver.CameraServer;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-//import edu.wpi.first.wpilibj.controller.PIDController;
+// import edu.wpi.first.wpilibj.controller.PIDController;
 
 
 /**
@@ -34,11 +34,11 @@ public class Robot extends TimedRobot {
 
   private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_left, m_right);
   private final Joystick m_stick = new Joystick(0);
-  //private final PIDController m_controller = new PIDController(Kp, Ki, Kd);
+  // private final PIDController m_controller = new PIDController
 
   private final CANSparkMax l_spinner = new CANSparkMax(31, MotorType.kBrushless);
   private final CANSparkMax r_spinner = new CANSparkMax(32, MotorType.kBrushless);
-  private final CANSparkMax pickupMotor = new CANSparkMax(34, MotorType.kBrushless);
+  private final WPI_VictorSPX pickupMotor = new WPI_VictorSPX(35);
 
   private final WPI_VictorSPX launcherLeader = new WPI_VictorSPX(41);
   private final WPI_VictorSPX launchLifter = new WPI_VictorSPX(42);
@@ -55,26 +55,30 @@ public class Robot extends TimedRobot {
     // Drive with arcade drive.
     // That means that the Y axis drives forward
     // and backward, and the X turns left and right.
-    m_robotDrive.arcadeDrive(m_stick.getX(), m_stick.getY());
+    m_robotDrive.arcadeDrive(m_stick.getX()/-1, m_stick.getY());
 
-      
+    /*
+    double value;
+    value = m_controller.getX();
+    value = m_controller.getY();
+    value = m_controller.getZ();
+    value = m_controller.getThrottle();
+    value = m_controller.getTwist();
+     */ 
          launcherLeader.set(0);
          l_spinner.set(0);
          r_spinner.set(0);
          pickupMotor.set(0);
-         launchLifter.set(0);
          boolean runner = false;
        if(runner == false){
            if(m_stick.getRawButton(1)){
                runner = true;
-                 launcherLeader.set(-1);
                  l_spinner.set(1);
                   r_spinner.set(-1);    
            }
            else if(runner == true){
                if(m_stick.getRawButton(1)){
                runner = false;
-                launcherLeader.set(0);
                 l_spinner.set(0);
                 r_spinner.set(0);    
                }              
@@ -85,65 +89,58 @@ public class Robot extends TimedRobot {
     if (beamup == false) {
       if (m_stick.getRawButton(2)) {
         beamup = true;
-        launcherLeader.set(-.7);
-        pickupMotor.set(.25);
+        launcherLeader.set(-.4);
+        pickupMotor.set(-.5);
+        l_spinner.set(-.2);
+        r_spinner.set(.2);
       } else if (beamup == true) {
         if (m_stick.getRawButton(2)) {
           beamup = false;
           launcherLeader.set(0);
           pickupMotor.set(0);
+          l_spinner.set(0);
+          r_spinner.set(0);
         }
       }
     }
 
     boolean beamout = false;
     if (beamout == false) {
-      if (m_stick.getRawButton(5)) {
+      if (m_stick.getRawButton(3)) {
         beamout = true;
-        launcherLeader.set(.7);
+        launcherLeader.set(.4);
+        l_spinner.set(-.4);
+        r_spinner.set(.4);
       } else if (beamout == true) {
         if (m_stick.getRawButton(5)) {
           beamout = false;
           launcherLeader.set(0);
+          l_spinner.set(0);
+          r_spinner.set(0);
         }
       }
     }
-
-       boolean belt = false;
-       if(belt == false){
-           if(m_stick.getRawButton(4)){
-               belt = true;
+           if(m_stick.getRawButton(7)){
                launchLifter.set(1);    
-           }
-           else if(belt == true){
-               if(m_stick.getRawButton(4)){
-               belt = false;
-               launchLifter.set(0);    
-               }              
-           }
+          }
+       
+           if(m_stick.getRawButton(8)){
+               launchLifter.set(-1);   
+          }    
+
+          if (m_stick.getRawButton(9)) {
+            launchLifter.set(0);
           }
 
-       boolean drop = false;
-       if(drop == false){
-           if(m_stick.getRawButton(3)){
-               drop = true;
-               launchLifter.set(-1);    
-           }
-           else if(drop == true){
-               if(m_stick.getRawButton(3)){
-               drop = false;
-               launchLifter.set(0);    
-               }              
-           }
-
-          }    
-   if(m_stick.getRawButton(7)){
+   if(m_stick.getRawButton(4)){
      launcherLeader.set(-1);
    } 
-   
-    if (m_stick.getRawButton(8)) {
-      launcherLeader.set(0);
+
+    if (m_stick.getRawButton(5)) {
+      pickupMotor.set(.4);
     }
+   
+
 
   }
   
