@@ -11,12 +11,21 @@ import edu.wpi.first.wpilibj.Joystick;
 //import edu.wpi.first.wpilibj.PWMVictorSPX;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
+
+import edu.wpi.cscore.CvSink;
+import edu.wpi.cscore.CvSource;
+import edu.wpi.cscore.UsbCamera;
 import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.networktables.NetworkTableInstance;
+
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 // import edu.wpi.first.wpilibj.controller.PIDController;
+
+import org.opencv.core.Mat;
 
 
 /**
@@ -34,6 +43,8 @@ public class Robot extends TimedRobot {
 
   private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_left, m_right);
   private final Joystick m_stick = new Joystick(0);
+  private final Joystick m_controller = new Joystick(1);
+
   // private final PIDController m_controller = new PIDController
 
   private final CANSparkMax l_spinner = new CANSparkMax(31, MotorType.kBrushless);
@@ -43,11 +54,76 @@ public class Robot extends TimedRobot {
   private final WPI_VictorSPX launcherLeader = new WPI_VictorSPX(41);
   private final WPI_VictorSPX launchLifter = new WPI_VictorSPX(42);
 
+  private double startTime;
+
   public void robotInit() {
 
     m_left.setInverted(true);
-    CameraServer.getInstance().startAutomaticCapture();
+
+  //mts - Attempting to copy camera code from Chief Delphi
+    Thread t = new Thread(() -> {
+
+      boolean allowCam1 = false;
+
+      UsbCamera camera1 = CameraServer.getInstance().startAutomaticCapture(0);
+      camera1.setResolution(320, 240);
+      camera1.setFPS(30);
+      UsbCamera camera2 = CameraServer.getInstance().startAutomaticCapture(1);
+      camera2.setResolution(320, 240);
+      camera2.setFPS(30);
+
+      CvSink cvSink1 = CameraServer.getInstance().getVideo(camera1);
+      CvSink cvSink2 = CameraServer.getInstance().getVideo(camera2);
+      CvSource outputStream = CameraServer.getInstance().putVideo("Switcher", 320, 240);
+
+      Mat image = new Mat();
+
+      while (!Thread.interrupted()) {
+
+        //!!!! Fix this button mapping !!!!
+        if (m_stick.getRawButton(100)) {
+          allowCam1 = !allowCam1;
+        }
+
+        if (allowCam1) {
+          cvSink2.setEnabled(false);
+          cvSink1.setEnabled(true);
+          cvSink1.grabFrame(image);
+        } else {
+          cvSink1.setEnabled(false);
+          cvSink2.setEnabled(true);
+          cvSink2.grabFrame(image);
+        }
+
+        outputStream.putFrame(image);
+      }
+
+    });
+    t.start();
+
+   
+  }
+
+  @Override
+  public void autonomousInit() {
+    startTime = Timer.getFPGATimestamp();
+  }
+
+  @Override
+  public void autonomousPeriodic() {
     
+    double time = Timer.getFPGATimestamp();
+  
+  if (time - startTime < 3) {
+    m_left.set(.2);
+    m_right.set(-.2);
+    
+  } else {
+    m_left.set(0);
+    m_right.set(0);
+
+  }
+
   }
 
   @Override
@@ -141,7 +217,8 @@ public class Robot extends TimedRobot {
     }
    
 
-
+  
+    //End teleopPeriodic
   }
   
 
